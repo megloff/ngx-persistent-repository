@@ -1,0 +1,52 @@
+{
+  "extends": "tslint:recommended",
+  "rules": {
+    "interface-name": [
+      true,
+      "never-prefix"
+    ],
+    "no-string-throw": false,
+    "max-line-length": [
+      false,
+      210
+    ],
+    "member-access": false,
+    "member-ordering": [
+      true,
+      {
+        "order": "fields-first"
+      }
+    ],
+    "no-angle-bracket-type-assertion": false,
+    "no-console": false,
+    "no-empty": [
+      true,
+      "allow-empty-functions"
+    ],
+    "no-floating-promises": true,
+    "no-misused-promises": true,
+    "object-literal-key-quotes": false,
+    "object-literal-shorthand": false,
+    "object-literal-sort-keys": false,
+    "ordered-imports": false,
+    "quotemark": [
+      true,
+      "double"
+    ],
+    "trailing-comma": false,
+    "triple-equals": [
+      false,
+      "allow-null-check",
+      "allow-undefined-check"
+    ],
+    "variable-name": false,
+    "whitespace": [
+      true,
+      "check-branch",
+      "check-decl",
+      "check-operator",
+      "check-separator",
+      "check-type"
+    ]
+  }
+}

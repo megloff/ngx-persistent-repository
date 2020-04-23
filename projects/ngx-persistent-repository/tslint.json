@@ -1,0 +1,17 @@
+{
+  "extends": "../../tslint.json",
+  "rules": {
+    "directive-selector": [
+      true,
+      "attribute",
+      "ngxPersistentRepository",
+      "camelCase"
+    ],
+    "component-selector": [
+      true,
+      "element",
+      "ngx-persistent-repository",
+      "kebab-case"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "angularCompilerOptions": {
+    "enableIvy": false,
+    "allowSyntheticDefaultImports": true
+  },
+  "files": [
+    "src/main.ts"
+  ]
+}
