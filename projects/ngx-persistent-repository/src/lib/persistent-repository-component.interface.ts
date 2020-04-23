@@ -50,11 +50,11 @@ export interface PersistentRepositoryComponentInterface {
      * @param path
      * @param value
      */
-    setValueDefault(path: string, value: any): any;
+    setDefaultValue(path: string, value: any): any;
 
     /**
      * Store everything passed in `values` in the repository section for this module if it has not yet a value
      * @param values
      */
-    setValueDefaults(values: GenericValues);
+    setDefaultValues(values: GenericValues);
 }

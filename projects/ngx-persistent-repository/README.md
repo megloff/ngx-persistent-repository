@@ -8,14 +8,14 @@ There are various hooks to synchronize the repository with the database.
 
 ## Installation
 
-`npm install ngx-persisten-repository`
+`npm install ngx-persistent-repository`
 
 ## Usage
 
 In your `module.ts` file:
  ```
 ...
-import { PersistentRepositoryService } from 'ngx-persisten-repository';
+import { PersistentRepositoryService } from 'ngx-persistent-repository';
 ...
 @NgModule({
     ...
@@ -28,7 +28,7 @@ import { PersistentRepositoryService } from 'ngx-persisten-repository';
 Let your component inherit from `PersistentRepositoryComponent` to use component specific namespaces this like:
 ```
 ...
-import { PersistentRepositoryComponent } from 'ngx-persisten-repository';
+import { PersistentRepositoryComponent } from 'ngx-persistent-repository';
 ...
 export class YourComponent extends PersistentRepositoryComponent implements ... {
 ...
@@ -44,4 +44,4 @@ A simple Example can be found under src/app directory of the repository. Use `ng
 
 ## Running unit tests
 
-Run `ng test ngx-persisten-repository` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Run `ng test ngx-persistent-repository` to execute the unit tests via [Karma](https://karma-runner.github.io).

@@ -41,12 +41,12 @@ export abstract class PersistentRepositoryComponent implements PersistentReposit
     }
 
     // noinspection JSUnusedGlobalSymbols
-    public setValueDefault(key: string, value: any): any {
-        return this.persistentRepository.setModuleValueDefault(this, key, value);
+    public setDefaultValue(key: string, value: any): any {
+        return this.persistentRepository.setModuleDefaultValue(this, key, value);
     }
 
     // noinspection JSUnusedGlobalSymbols
-    public setValueDefaults(values: PersistentRepositoryGenericValues) {
-        this.persistentRepository.setModuleValueDefaults(this, values);
+    public setDefaultValues(values: PersistentRepositoryGenericValues) {
+        this.persistentRepository.setModuleDefaultValues(this, values);
     }
 }

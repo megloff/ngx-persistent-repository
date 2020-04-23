@@ -19,7 +19,7 @@ export class AppComponent extends PersistentRepositoryComponent implements OnIni
 
     public reset() {
         this.persistentRepository.resetValues();
-        this.loadCount = this.setValueDefault("loadCount", 0);
+        this.loadCount = this.setDefaultValue("loadCount", 0);
     }
 
     ngOnInit() {
@@ -31,7 +31,7 @@ export class AppComponent extends PersistentRepositoryComponent implements OnIni
             }
         });
 
-        this.loadCount = this.setValueDefault("loadCount", 1);
+        this.loadCount = this.setDefaultValue("loadCount", 1);
         this.loadCount += 1;
         this.setValue("loadCount", this.loadCount);
     }

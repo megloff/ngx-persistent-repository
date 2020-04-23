@@ -24,9 +24,7 @@ export interface PersistentRepositoryOptions {
 
 export interface PersistentRepositoryData extends PersistentRepositoryOptions {
     cookieLoaded?: boolean;
-    data: {
-        [key: string]: any;
-    }
+    data: PersistentRepositoryGenericValues
 }
 
 export enum PersistentRepositoryUpdateTypes {
@@ -78,7 +76,8 @@ export class PersistentRepositoryService {
 
     public updateCookieImmediate() {
         if (this.repository.cookiesEnabled) {
-            const repositoryData = btoa(JSON.stringify(this.repository.data));
+            const data = JSON.stringify(this.repository.data);
+            const repositoryData = btoa(data);
             this.cookieService.set(
                 this.repository.cookieConfig.name,
                 repositoryData,
@@ -118,11 +117,6 @@ export class PersistentRepositoryService {
         this.loadCookieData();
     }
 
-    public setDefaults(defaults: PersistentRepositoryGenericValues) {
-        this.repository.defaults = _.cloneDeep(defaults);
-        this.setValueDefaults(defaults);
-    }
-
     public enableCookies(enable: boolean) {
         this.repository.cookiesEnabled = enable;
         this.loadCookieData();
@@ -131,7 +125,7 @@ export class PersistentRepositoryService {
     public loadCookieData(force?: boolean) {
         if (this.repository.cookiesEnabled) {
             if (force || !this.repository.cookieLoaded) {
-                const base64Data = this.cookieService.get(this.repository.cookieConfig.name);
+                const base64Data = decodeURIComponent(this.cookieService.get(this.repository.cookieConfig.name));
                 if (base64Data) {
                     this.repository.data = JSON.parse(atob(base64Data));
                 } else {
@@ -165,9 +159,9 @@ export class PersistentRepositoryService {
         this.setValue(`moduleValues.${name}`, values);
     }
 
-    public setModuleValueDefault<T>(module: PersistentRepositoryComponentInterface, path: string, value: T): T {
+    public setModuleDefaultValue<T>(module: PersistentRepositoryComponentInterface, path: string, value: T): T {
         const name = module.getModuleName();
-        return this.setValueDefault(`moduleValues.${name}.${path}`, value);
+        return this.setDefaultValue(`moduleValues.${name}.${path}`, value);
     }
 
     public setModuleValue(module: PersistentRepositoryComponentInterface, path: string, value: any) {
@@ -175,10 +169,10 @@ export class PersistentRepositoryService {
         this.setValue(`moduleValues.${name}.${path}`, value);
     }
 
-    public setModuleValueDefaults(module: PersistentRepositoryComponentInterface, defaults: PersistentRepositoryGenericValues) {
+    public setModuleDefaultValues(module: PersistentRepositoryComponentInterface, defaults: PersistentRepositoryGenericValues) {
         if (_.isObject(defaults)) {
             _.forEach(defaults, (value, key) => {
-                this.setModuleValueDefault(module, key, value);
+                this.setModuleDefaultValue(module, key, value);
             });
         }
     }
@@ -198,7 +192,7 @@ export class PersistentRepositoryService {
         return this.clearValue(`moduleValues.${name}.${path}`);
     }
 
-    public setValueDefault<T>(path: string, value: T): T {
+    public setDefaultValue<T>(path: string, value: T): T {
         if (!_.has(this.repository.data, path)) {
             this.setValue(path, value);
         }
@@ -206,10 +200,16 @@ export class PersistentRepositoryService {
         return this.getValue(path);
     }
 
-    public setValueDefaults(defaults: PersistentRepositoryGenericValues) {
+    public setDefaultValues(defaults: PersistentRepositoryGenericValues, permanent?: boolean) {
         if (_.isObject(defaults)) {
+            defaults = _.cloneDeep(defaults);
+
+            if (permanent) {
+                this.repository.defaults =defaults;
+            }
+
             _.forEach(defaults, (value, key) => {
-                this.setValueDefault(key, value);
+                this.setDefaultValue(key, value);
             });
         }
     }
@@ -248,7 +248,7 @@ export class PersistentRepositoryService {
         _.unset(this.repository.data, path);
     }
 
-    public inValue(path: string, value: string | number | boolean): boolean {
+    public hasValue(path: string, value: string | number | boolean): boolean {
         const values = this.getValue(path);
         return _.isArray(values) ? values.includes(value) : false;
     }

@@ -62,7 +62,7 @@ describe("PersistentRepositoryComponentTest", () => {
 
     it("should set default values", () => {
         component.setValue("test", 42);
-        component.setValueDefault("test", 1);
+        component.setDefaultValue("test", 1);
         expect(component.getValue("test")).toBe(42);
     });
 
@@ -72,7 +72,7 @@ describe("PersistentRepositoryComponentTest", () => {
             "test2": 42
         });
 
-        component.setValueDefaults({
+        component.setDefaultValues({
             "test1": 1,
             "test3": 5
         });
