@@ -52,7 +52,13 @@ export class PersistentRepositoryTestComponent extends PersistentRepositoryCompo
 
         this.getPersistentRepository().getUpdateSubject().subscribe((message) => {
             switch (message.type) {
-                case PersistentRepositoryUpdateTypes.Initialize:
+                case PersistentRepositoryUpdateTypes.Startup:
+                    this.lastType = "Startup";
+                    this.lastData = message.data;
+                    this.lastPath = null;
+                    this.lastValue = null;
+                    break;
+                case PersistentRepositoryUpdateTypes.PersistentDataRead:
                     this.lastType = "Initialize";
                     this.lastData = message.data;
                     this.lastPath = null;
@@ -70,7 +76,7 @@ export class PersistentRepositoryTestComponent extends PersistentRepositoryCompo
                     this.lastPath = null;
                     this.lastValue = null;
                     break;
-                case PersistentRepositoryUpdateTypes.BulkWrite:
+                case PersistentRepositoryUpdateTypes.PersistentDataWritten:
                     this.lastType = "BulkWrite";
                     this.lastData = message.data;
                     this.lastPath = null;

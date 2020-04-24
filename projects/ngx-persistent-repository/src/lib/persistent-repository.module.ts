@@ -1,10 +1,9 @@
 import {Injector, NgModule} from "@angular/core";
-import {PersistentRepositoryTestComponent} from "./persistent-repository-test/persistent-repository-test.component";
 import {CookieService} from "ngx-cookie-service";
 import {PersistentRepositoryService} from "./persistent-repository.service";
 
 @NgModule({
-    declarations: [PersistentRepositoryTestComponent],
+    declarations: [],
     imports: [],
     exports: [],
     providers: [CookieService, PersistentRepositoryService]
