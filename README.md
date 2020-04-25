@@ -8,5 +8,5 @@ After using `npm install` to get all required packages run `ng serve` for a demo
 
 ## Further Information
 
-There is more information about the package in the readme file of the project under `projects/ngx-persistent-repository/`. 
+There is more information about the package in the [README.md](projects/ngx-persistent-repository/README.md) file of the project. 
 

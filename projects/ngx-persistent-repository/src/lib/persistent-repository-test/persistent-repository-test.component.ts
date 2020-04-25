@@ -1,7 +1,8 @@
 import {Component, OnInit} from "@angular/core";
 import {PersistentRepositoryComponent} from "../persistent-repository-component";
-import {PersistentRepositoryGenericValues, PersistentRepositoryUpdateTypes} from "../persistent-repository.service";
+import {PRGenericValues, PRUpdateTypes} from "../persistent-repository.service";
 
+// noinspection AngularMissingOrInvalidDeclarationInModule
 @Component({
     selector: "ngx-persistent-repo-persistent-repo-component",
     templateUrl: "./persistent-repository-test.component.html",
@@ -9,7 +10,7 @@ import {PersistentRepositoryGenericValues, PersistentRepositoryUpdateTypes} from
 })
 export class PersistentRepositoryTestComponent extends PersistentRepositoryComponent implements OnInit {
     private lastType: string;
-    private lastData: PersistentRepositoryGenericValues;
+    private lastData: PRGenericValues;
     private lastPath: string;
     private lastValue: any;
     private lastCount: number;
@@ -30,10 +31,6 @@ export class PersistentRepositoryTestComponent extends PersistentRepositoryCompo
         return this.lastType;
     }
 
-    public getLastData(): PersistentRepositoryGenericValues {
-        return this.lastData;
-    }
-
     public getLastPath(): string {
         return this.lastPath;
     }
@@ -50,34 +47,37 @@ export class PersistentRepositoryTestComponent extends PersistentRepositoryCompo
         this.lastType = "Starting";
         this.lastCount = 0;
 
+        this.persistentRepository.enableCookies(true);
+
         this.getPersistentRepository().getUpdateSubject().subscribe((message) => {
+            // console.log("message", message);
             switch (message.type) {
-                case PersistentRepositoryUpdateTypes.Startup:
+                case PRUpdateTypes.Startup:
                     this.lastType = "Startup";
                     this.lastData = message.data;
                     this.lastPath = null;
                     this.lastValue = null;
                     break;
-                case PersistentRepositoryUpdateTypes.PersistentDataRead:
-                    this.lastType = "Initialize";
+                case PRUpdateTypes.DataRead:
+                    this.lastType = "DataRead";
                     this.lastData = message.data;
                     this.lastPath = null;
                     this.lastValue = null;
                     break;
-                case PersistentRepositoryUpdateTypes.Update:
+                case PRUpdateTypes.Update:
                     this.lastType = "Update";
                     this.lastData = null;
-                    this.lastPath = message.data.path;
-                    this.lastValue = message.data.value;
+                    this.lastPath = message.path;
+                    this.lastValue = message.value;
                     break;
-                case PersistentRepositoryUpdateTypes.Reset:
+                case PRUpdateTypes.Reset:
                     this.lastType = "Reset";
                     this.lastData = message.data;
                     this.lastPath = null;
                     this.lastValue = null;
                     break;
-                case PersistentRepositoryUpdateTypes.PersistentDataWritten:
-                    this.lastType = "BulkWrite";
+                case PRUpdateTypes.DataWritten:
+                    this.lastType = "DataWritten";
                     this.lastData = message.data;
                     this.lastPath = null;
                     this.lastValue = null;

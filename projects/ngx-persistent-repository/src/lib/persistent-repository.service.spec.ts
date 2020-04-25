@@ -19,7 +19,7 @@ describe('NgxPersistentRepositoryService', () => {
     });
 
     it('should retrieve default value', function () {
-        service.setDefaultValues({
+        service.setValues({
             test: 12
         });
 
@@ -27,7 +27,7 @@ describe('NgxPersistentRepositoryService', () => {
     });
 
     it('should overwrite default value', function () {
-        service.setDefaultValues({
+        service.setValues({
             test: 12
         });
 
@@ -36,7 +36,7 @@ describe('NgxPersistentRepositoryService', () => {
     });
 
     it('should overwrite default value', function () {
-        service.setDefaultValues({
+        service.setValues({
             test: 12
         });
 
@@ -44,8 +44,8 @@ describe('NgxPersistentRepositoryService', () => {
         expect(service.getValue("test")).toBe(42);
     });
 
-    it('should setting default show keep existing value', function () {
-        service.setDefaultValues({
+    it('should setting default should keep existing value', function () {
+        service.setValues({
             test: 12
         });
 
@@ -53,27 +53,11 @@ describe('NgxPersistentRepositoryService', () => {
         expect(service.getValue("test")).toBe(12);
     });
 
-    it('should setting defaults show keep existing values', function () {
-        service.setDefaultValues({
-            test1: 12,
-            test2: 13
-        });
-
-        service.setDefaultValues({
-            test1: 42,
-            test3: 1
-        });
-
-        expect(service.getValue("test1")).toBe(12);
-        expect(service.getValue("test2")).toBe(13);
-        expect(service.getValue("test3")).toBe(1);
-    });
-
     it('should correctly reset values', function () {
-        service.setDefaultValues({
+        service.setDefaults({
             test1: 12,
             test2: 13
-        }, true);
+        });
 
         service.setValue("test1", 42);
         service.setValue("test3", 1);
@@ -85,7 +69,7 @@ describe('NgxPersistentRepositoryService', () => {
     });
 
     it('should correctly clear values', function () {
-        service.setDefaultValues({
+        service.setValues({
             test1: 12,
             test2: 13
         });
@@ -97,7 +81,7 @@ describe('NgxPersistentRepositoryService', () => {
     });
 
     it('should handle object values with paths', function () {
-        service.setDefaultValues({
+        service.setValues({
             test: {
                 a: 1,
                 b: 42
@@ -113,12 +97,12 @@ describe('NgxPersistentRepositoryService', () => {
     });
 
     it('should handle array in-value test', function () {
-        service.setDefaultValues({
+        service.setValues({
             test: [1, 2, 3]
         });
 
-        expect(service.hasValue("test", 1)).toBeTrue();
-        expect(service.hasValue("test", 42)).toBeFalse();
+        expect(service.containsValue("test", 1)).toBeTrue();
+        expect(service.containsValue("test", 42)).toBeFalse();
     });
 });
 

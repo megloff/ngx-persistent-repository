@@ -1,17 +1,14 @@
 import {Injectable, Injector} from "@angular/core";
-import {PersistentRepositoryComponentInterface} from "./persistent-repository-component.interface";
 import {CookieService} from "ngx-cookie-service";
-import LZUTF8 from "lzutf8";
-
-import * as _ from "lodash";
+import * as LZUTF8 from "lzutf8";
 import {Subject} from "rxjs";
-import {hasDirectiveDecorator} from "@angular/core/schematics/migrations/undecorated-classes-with-di/ng_declaration_collector";
+import * as _ from "lodash";
 
-export interface PersistentRepositoryGenericValues {
+export interface PRGenericValues {
     [key: string]: any;
 }
 
-export interface PersistentRepositoryOptions {
+export interface PROptions {
     cookiesEnabled?: boolean;
     databaseHandle?: number | string
     cookieConfig?: {
@@ -22,44 +19,54 @@ export interface PersistentRepositoryOptions {
         secure?: boolean,
         sameSite?: "Lax" | "None" | "Strict"
     },
-    defaults?: PersistentRepositoryGenericValues;
+    defaults?: PRGenericValues;
 }
 
-export interface PersistentRepositoryData extends PersistentRepositoryOptions {
-    data: PersistentRepositoryGenericValues
+export interface PRData extends PROptions {
+    data: PRGenericValues
 }
 
-export enum PersistentRepositoryUpdateTypes {
-    Startup, PersistentDataRead, Reset, Update, PersistentDataWritten
+export enum PRUpdateTypes {
+    Startup, DataRead, Reset, Update, DataWritten
 }
 
-export interface PersistentRepositoryUpdateMessage {
-    type: PersistentRepositoryUpdateTypes;
+export interface PRUpdateMessage {
+    type: PRUpdateTypes;
     databaseHandle: number | string;
-    data: PersistentRepositoryGenericValues;
+    data: PRGenericValues;
     path?: string;
     value?: any;
 }
 
-export let PersistentRepositoryInjector: Injector;
+export let PRGlobalInjector: Injector;
 
 @Injectable({
     providedIn: "root"
 })
 export class PersistentRepositoryService {
-    private readonly repository: PersistentRepositoryData;
-    private readonly updates: Subject<PersistentRepositoryUpdateMessage> = new Subject<PersistentRepositoryUpdateMessage>();
+    private readonly repository: PRData;
+    private readonly updates: Subject<PRUpdateMessage> = new Subject<PRUpdateMessage>();
 
-    private fetchPersistentDataHook: (databaseHandle: string | number) => Promise<PersistentRepositoryGenericValues>;
-    private writePersistentDataHook: (databaseHandle: string | number, data: PersistentRepositoryGenericValues) => Promise<void>;
+    private fetchPersistentDataHook: (databaseHandle: string | number) => Promise<PRGenericValues>;
+    private writePersistentDataHook: (databaseHandle: string | number, data: PRGenericValues) => Promise<void>;
 
+    private readonly namespaceSection = "__namespaces__";
+
+    private updatePersistentData = _.debounce(() => {
+        this.updatePersistentDataImmediate().catch((error) => {
+            console.error(error);
+        });
+    }, 100, {trailing: true});
+
+    /**
+     * The core service of NgxPersistentRepository. Inject this package into your components and services to access the repository.
+     */
     constructor(private appInjector: Injector, private cookieService: CookieService) {
-        PersistentRepositoryInjector = appInjector;
+        PRGlobalInjector = appInjector;
 
         this.repository = {
             cookieConfig: {
                 name: "NgxPersistentRepository",
-                expires: 365,
                 secure: false,
                 sameSite: "Lax"
             },
@@ -68,18 +75,20 @@ export class PersistentRepositoryService {
         };
 
         this.updates.next({
-            type: PersistentRepositoryUpdateTypes.Startup,
+            type: PRUpdateTypes.Startup,
             databaseHandle: this.repository.databaseHandle,
             data: this.repository.data
         });
     }
 
-    private updatePersistentData = _.debounce(() => {
-        this.updatePersistentDataImmediate().catch();
-    }, 100, {trailing: true});
-
+    /**
+     * Immediately update the persistence database from the repository. The promise fulfills when the synchronization is complete.
+     */
     public updatePersistentDataImmediate(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
+            // cancel any possibly pending call
+            this.updatePersistentData.cancel();
+
             if (this.repository.cookiesEnabled) {
                 let payload: any;
 
@@ -112,7 +121,7 @@ export class PersistentRepositoryService {
                     if (this.writePersistentDataHook) {
                         this.writePersistentDataHook(this.repository.databaseHandle, this.repository.data).then(() => {
                             this.updates.next({
-                                type: PersistentRepositoryUpdateTypes.PersistentDataWritten,
+                                type: PRUpdateTypes.DataWritten,
                                 databaseHandle: this.repository.databaseHandle,
                                 data: this.repository.data
                             });
@@ -124,7 +133,7 @@ export class PersistentRepositoryService {
                     }
                 } else {
                     this.updates.next({
-                        type: PersistentRepositoryUpdateTypes.PersistentDataWritten,
+                        type: PRUpdateTypes.DataWritten,
                         databaseHandle: this.repository.databaseHandle,
                         data: this.repository.data
                     });
@@ -139,20 +148,39 @@ export class PersistentRepositoryService {
         });
     }
 
-    public setFetchPersistentDataHook(hook: (databaseHandle: string | number) => Promise<PersistentRepositoryGenericValues>) {
+    // noinspection JSUnusedGlobalSymbols
+    /**
+     * Set a hook for fetching data from an external persistence database. The hook is called with `databaseHandle` as parameter. It should fulfill its promise with an
+     * object containing the complete repository to be activated.
+     * @param hook
+     */
+    public setFetchPersistentDataHook(hook: (databaseHandle: string | number) => Promise<PRGenericValues>) {
         this.fetchPersistentDataHook = hook;
     }
 
-    public setWritePersistentDataHook(hook: (databaseHandle: string | number, data: PersistentRepositoryGenericValues) => Promise<void>) {
+    // noinspection JSUnusedGlobalSymbols
+    /**
+     * Set a hook for writing data to an external persistence database. The hook is called with `databaseHandle` and the repository data as parameter. It should fulfill its promise
+     * after the data has been written to the database.
+     * @param hook
+     */
+    public setWritePersistentDataHook(hook: (databaseHandle: string | number, data: PRGenericValues) => Promise<void>) {
         this.writePersistentDataHook = hook;
     }
 
-    public getUpdateSubject(): Subject<PersistentRepositoryUpdateMessage> {
+    /**
+     * Get a subject to observe repository activity.
+     */
+    public getUpdateSubject(): Subject<PRUpdateMessage> {
         return this.updates;
     }
 
-    // noinspection JSUnusedSymbols
-    public setOptions(options?: PersistentRepositoryOptions): Promise<void> {
+    // noinspection JSUnusedGlobalSymbols
+    /**
+     * Update repository options and reload the repository data from the persistence database. The promise fulfills when the data has been loaded and is ready to use.
+     * @param options
+     */
+    public setOptions(options?: PROptions): Promise<void> {
         options = _.clone(options || {});
 
         if (options.cookieConfig) {
@@ -165,10 +193,19 @@ export class PersistentRepositoryService {
         return this.loadPersistentData();
     }
 
+    // noinspection JSUnusedGlobalSymbols
+    /**
+     * Enable the use of cookies. Use this method with the result your cookie-consent tool. Note that if cookies are not enabled, the repository **will not** be persistent!
+     * @param enable
+     */
     public enableCookies(enable: boolean) {
         this.repository.cookiesEnabled = enable;
     }
 
+    /**
+     * Update the database handle. The promise fulfills when the repository reflects the data associated with the new handle.
+     * @param handle
+     */
     public setDatabaseHandle(handle: number | string): Promise<void> {
         let promise: Promise<void>;
 
@@ -187,14 +224,26 @@ export class PersistentRepositoryService {
         return promise;
     }
 
+    // noinspection JSUnusedGlobalSymbols
+    /**
+     * Clear the database handle and reset all values. The promise fulfills when the repository has been reset and is ready to use.
+     */
     public clearDatabaseHandle(): Promise<void> {
         return this.setDatabaseHandle(null);
     }
 
+    // noinspection JSUnusedGlobalSymbols
+    /**
+     * Return the current database handle.
+     */
     public getDatabaseHandle(): number | string {
         return this.repository.databaseHandle;
     }
 
+    /**
+     * Reload persistent data either directly from the cookie of, if a database handle has been set, from an external database via the `fetchPersistentDataHook`. The promise fulfills
+     * when the data has been read from the source and is ready to use.
+     */
     public loadPersistentData(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             this.repository.data = {};
@@ -221,22 +270,22 @@ export class PersistentRepositoryService {
                     this.fetchPersistentDataHook(this.repository.databaseHandle).then((values) => {
                         this.repository.data = _.cloneDeep(values);
                         this.updates.next({
-                            type: PersistentRepositoryUpdateTypes.PersistentDataRead,
+                            type: PRUpdateTypes.DataRead,
                             databaseHandle: this.repository.databaseHandle,
                             data: this.repository.data
                         });
                         resolve();
                     }).catch((error) => {
-                        console.error(error);
                         this.repository.data = {};
                         this.repository.databaseHandle = null;
+                        reject(error);
                     });
                 } else {
                     reject("the persistent database hooks must be set when activating a database handle");
                 }
             } else {
                 this.updates.next({
-                    type: PersistentRepositoryUpdateTypes.PersistentDataRead,
+                    type: PRUpdateTypes.DataRead,
                     databaseHandle: this.repository.databaseHandle,
                     data: this.repository.data
                 });
@@ -245,50 +294,33 @@ export class PersistentRepositoryService {
         });
     }
 
+    /**
+     * Reset the repository to it's default values. The promise fulfills after repository has synchronized with the persistence database.
+     */
     public resetValues(): Promise<void> {
-        this.repository.data = _.cloneDeep(this.repository.defaults);
+        this.repository.data = _.cloneDeep(this.repository.defaults || {});
         return this.updatePersistentDataImmediate();
     }
 
-    public setModuleValues(module: PersistentRepositoryComponentInterface, values: PersistentRepositoryGenericValues) {
-        const name = module.getModuleName();
-        this.setValue(`moduleValues.${name}`, values);
+    // noinspection JSUnusedGlobalSymbols
+    /**
+     * Set the repository default values to be used when `resetValues` is called. Defaults to empty repository.
+     * @param defaults
+     */
+    public setDefaults(defaults: PRGenericValues) {
+        this.repository.defaults = _.cloneDeep(defaults || {});
     }
 
-    public setModuleDefaultValue<T>(module: PersistentRepositoryComponentInterface, path: string, value: T): T {
-        const name = module.getModuleName();
-        return this.setDefaultValue(`moduleValues.${name}.${path}`, value);
-    }
+    /**
+     * If there is no repository entry for `path` then set `path` to `value` else keep the existing value. Returns the resulting value for `path`.
+     * If no namespace is given the global repository is used.
+     * @param path
+     * @param value
+     * @param namespace
+     */
+    public setDefaultValue<T>(path: string, value: T, namespace?: string): T {
+        path = this.preparePath(path, namespace);
 
-    public setModuleValue(module: PersistentRepositoryComponentInterface, path: string, value: any) {
-        const name = module.getModuleName();
-        this.setValue(`moduleValues.${name}.${path}`, value);
-    }
-
-    public setModuleDefaultValues(module: PersistentRepositoryComponentInterface, defaults: PersistentRepositoryGenericValues) {
-        if (_.isObject(defaults)) {
-            _.forEach(defaults, (value, key) => {
-                this.setModuleDefaultValue(module, key, value);
-            });
-        }
-    }
-
-    public getModuleValue(module: PersistentRepositoryComponentInterface, path: string): any {
-        const name = module.getModuleName();
-        return this.getValue(`moduleValues.${name}.${path}`);
-    }
-
-    public getModuleValues(module: PersistentRepositoryComponentInterface): any {
-        const name = module.getModuleName();
-        return _.cloneDeep(this.getValue(`moduleValues.${name}`));
-    }
-
-    public clearModuleValue(module: PersistentRepositoryComponentInterface, path: string): void {
-        const name = module.getModuleName();
-        return this.clearValue(`moduleValues.${name}.${path}`);
-    }
-
-    public setDefaultValue<T>(path: string, value: T): T {
         if (!_.has(this.repository.data, path)) {
             this.setValue(path, value);
         }
@@ -296,25 +328,19 @@ export class PersistentRepositoryService {
         return this.getValue(path);
     }
 
-    public setDefaultValues(defaults: PersistentRepositoryGenericValues, permanent?: boolean) {
-        if (_.isObject(defaults)) {
-            defaults = _.cloneDeep(defaults);
+    /**
+     * Set `path` to `value` in the global section of the repository or in the given namespace.
+     * @param path
+     * @param value
+     * @param namespace
+     */
+    public setValue(path: string, value: any, namespace?): void {
+        path = this.preparePath(path, namespace);
 
-            if (permanent) {
-                this.repository.defaults = defaults;
-            }
-
-            _.forEach(defaults, (value, key) => {
-                this.setDefaultValue(key, value);
-            });
-        }
-    }
-
-    public setValue(path: string, value: any): void {
         _.set(this.repository.data, path, value);
 
         this.updates.next({
-            type: PersistentRepositoryUpdateTypes.Update,
+            type: PRUpdateTypes.Update,
             databaseHandle: this.repository.databaseHandle,
             data: this.repository.data,
             path: path,
@@ -324,28 +350,69 @@ export class PersistentRepositoryService {
         this.updatePersistentData();
     }
 
-    public setValues(values: PersistentRepositoryGenericValues) {
-        if (_.isObject(values)) {
-            _.forEach(values, (value, key) => {
-                this.setValue(key, value);
-            });
-        }
+    /**
+     * Set all values of the given object in the global section of the repository or in the namespace.
+     * @param values
+     * @param namespace
+     */
+    public setValues(values: PRGenericValues, namespace?: string) {
+        _.forEach(values, (value, key) => {
+            this.setValue(key, value, namespace);
+        });
     }
 
-    public getValue(path: string): any {
-        return _.get(this.repository.data, path);
+    /**
+     * Get the value associated with `path` from the global section of the repository or from the namespace.
+     * @param path
+     * @param namespace
+     */
+    public getValue(path: string, namespace?: string): any {
+        return _.get(this.repository.data, this.preparePath(path, namespace));
     }
 
-    public getValues(): PersistentRepositoryGenericValues {
-        return _.cloneDeep(this.repository.data);
+    /**
+     * Get a copy of the complete global repository or of a namespace.
+     */
+    public getValues(namespace?: string): PRGenericValues {
+        return _.cloneDeep(namespace ? _.get(this.repository.data, this.preparePath("", namespace)) : this.repository.data);
     }
 
-    public clearValue(path: string): void {
-        _.unset(this.repository.data, path);
+    /**
+     * Clear the value at `path` in the global repository or in a namespace.
+     * @param path
+     * @param namespace
+     */
+    public clearValue(path: string, namespace?: string): void {
+        _.unset(this.repository.data, this.preparePath(path, namespace));
     }
 
-    public hasValue(path: string, value: string | number | boolean): boolean {
-        const values = this.getValue(path);
+    /**
+     * Check whether `value` exists in the array stored at `path`. The entry at `path` must be an array.
+     * If no namespace is given the global repository is used.
+     * @param path
+     * @param value
+     * @param namespace
+     */
+    public containsValue(path: string, value: string | number | boolean, namespace?: string): boolean {
+        const values = this.getValue(path, namespace);
         return _.isArray(values) ? values.includes(value) : false;
+    }
+
+    /**
+     * Prepare a path with an optionally given namespace.
+     * @param path
+     * @param namespace
+     */
+    private preparePath(path: string, namespace?: string): string {
+        let fullPath: string = path;
+
+        if (namespace) {
+            fullPath = `${this.namespaceSection}.${namespace}`;
+            if (path) {
+                fullPath += `.${path}`;
+            }
+        }
+
+        return fullPath;
     }
 }

@@ -25,5 +25,13 @@
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,
     "strictInjectionParameters": true
+  },
+  "typedocOptions": {
+    "out": "docs",
+	"includeVersion": true,
+	"exclude": "**/public-api.ts",
+	"excludePrivate": true, 
+	"exclude": ["**/*-test.*", "**/*.spec.ts", "**/*.module.ts"],
+	"source": "src/lib"
   }
 }

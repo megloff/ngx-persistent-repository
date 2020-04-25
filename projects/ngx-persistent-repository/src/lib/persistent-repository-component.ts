@@ -1,52 +1,74 @@
-import {PersistentRepositoryGenericValues, PersistentRepositoryInjector, PersistentRepositoryService} from "./persistent-repository.service";
+import {PRGenericValues, PRGlobalInjector, PersistentRepositoryService} from "./persistent-repository.service";
 import {PersistentRepositoryComponentInterface} from "./persistent-repository-component.interface";
 
 export abstract class PersistentRepositoryComponent implements PersistentRepositoryComponentInterface {
     protected persistentRepository: PersistentRepositoryService;
 
+    /**
+     * Let your components inherit from this class to get simple access to repository values within their own namespace. Use `getModuleName()` to define the namespace name.
+     */
     protected constructor() {
-        this.persistentRepository = PersistentRepositoryInjector.get(PersistentRepositoryService);
+        this.persistentRepository = PRGlobalInjector.get(PersistentRepositoryService);
     }
 
+    /**
+     * @inheritDoc
+     */
     public getPersistentRepository(): PersistentRepositoryService {
         return this.persistentRepository;
     }
 
     // noinspection JSUnusedGlobalSymbols
+    /**
+     * @inheritDoc
+     */
     public abstract getModuleName(): string;
 
     // noinspection JSUnusedGlobalSymbols
+    /**
+     * @inheritDoc
+     */
     public getValue(key: string): any {
-        return this.persistentRepository.getModuleValue(this, key);
+        return this.persistentRepository.getValue(key, this.getModuleName());
     }
 
     // noinspection JSUnusedGlobalSymbols
+    /**
+     * @inheritDoc
+     */
     public getValues(): any {
-        return this.persistentRepository.getModuleValues(this);
+        return this.persistentRepository.getValues(this.getModuleName());
     }
 
     // noinspection JSUnusedGlobalSymbols
+    /**
+     * @inheritDoc
+     */
     public clearValue(key: string): any {
-        return this.persistentRepository.clearModuleValue(this, key);
+        return this.persistentRepository.clearValue(key, this.getModuleName());
     }
 
     // noinspection JSUnusedGlobalSymbols
+    /**
+     * @inheritDoc
+     */
     public setValue(key: string, value: any) {
-        this.persistentRepository.setModuleValue(this, key, value);
+        this.persistentRepository.setValue(key, value, this.getModuleName());
     }
 
     // noinspection JSUnusedGlobalSymbols
-    public setValues(values: any) {
-        this.persistentRepository.setModuleValues(this, values);
+    /**
+     * @inheritDoc
+     */
+    public setValues(values: PRGenericValues) {
+        this.persistentRepository.setValues(values, this.getModuleName());
     }
 
     // noinspection JSUnusedGlobalSymbols
+    /**
+     * @inheritDoc
+     */
     public setDefaultValue(key: string, value: any): any {
-        return this.persistentRepository.setModuleDefaultValue(this, key, value);
-    }
-
-    // noinspection JSUnusedGlobalSymbols
-    public setDefaultValues(values: PersistentRepositoryGenericValues) {
-        this.persistentRepository.setModuleDefaultValues(this, values);
+        return this.persistentRepository.setDefaultValue(key, value, this.getModuleName());
     }
 }

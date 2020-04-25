@@ -1,0 +1,248 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>ngx-persistent-repository - v1.0.0</title>
+	<meta name="description" content="Documentation for ngx-persistent-repository - v1.0.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">ngx-persistent-repository - v1.0.0</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+							<input type="checkbox" id="tsd-filter-only-exported" />
+							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="globals.html">Globals</a>
+				</li>
+			</ul>
+			<h1>ngx-persistent-repository - v1.0.0</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<a href="#ngxpersistentrepository" id="ngxpersistentrepository" style="color: inherit; text-decoration: none;">
+					<h1>NgxPersistentRepository</h1>
+				</a>
+				<p>A persistent repository for storing basic key-value pairs to be used in Angular project providing a global and component specific namespaces.</p>
+				<p>In many cases there is no need for a database as the persistent data is stored in a browser cookie.
+				However, if the compressed repository exceeds maximal cookie size of 4KB, the persistent data must be held in a database. </p>
+				<p>The API allows to initialize the repository with values from a database and provides hooks for synchronizing the repository with the database.</p>
+				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
+					<h2>Installation</h2>
+				</a>
+				<p><code>npm install ngx-persistent-repository</code></p>
+				<a href="#dependencies" id="dependencies" style="color: inherit; text-decoration: none;">
+					<h2>Dependencies</h2>
+				</a>
+				<p>The packages below must be manually installed in order to use the persistent repository:</p>
+				<pre><code><span class="hljs-string">"@angular/common"</span>: <span class="hljs-string">"&gt;=6.0.0"</span>,
+<span class="hljs-string">"@angular/core"</span>: <span class="hljs-string">"&gt;=6.0.0"</span>,
+<span class="hljs-string">"tslib"</span>: <span class="hljs-string">"&gt;1.9.0"</span>,
+<span class="hljs-string">"ngx-cookie-service"</span>: <span class="hljs-string">"^3.0.0"</span>,
+<span class="hljs-string">"lodash"</span>: <span class="hljs-string">"^4.0.0"</span>,
+<span class="hljs-string">"lzutf8"</span>: <span class="hljs-string">"^0.5.5"</span>,
+<span class="hljs-string">"stream"</span>: <span class="hljs-string">"^0.0.2"</span></code></pre>
+				<a href="#global-repository-usage" id="global-repository-usage" style="color: inherit; text-decoration: none;">
+					<h2>Global Repository Usage</h2>
+				</a>
+				<p>In your <code>module.ts</code> file:</p>
+				<pre><code><span class="hljs-keyword">import</span> { PersistentRepositoryService } from <span class="hljs-string">'ngx-persistent-repository'</span>;
+
+@NgModule({
+    <span class="hljs-params">...</span>
+    providers: <span class="hljs-meta">[</span><span class="hljs-params">...</span>, PersistentRepositoryService, <span class="hljs-params">...</span><span class="hljs-meta">]</span>,
+    ...
+);</code></pre><p>To use the repository, simply inject <code>PersistentRepositoryService</code>  into your class.</p>
+				<a href="#component-repository-usage" id="component-repository-usage" style="color: inherit; text-decoration: none;">
+					<h2>Component Repository Usage</h2>
+				</a>
+				<p>If you want use a separate namespace in the repository for one of you components, simply let the component inherit from <code>PersistentRepositoryComponent</code>:</p>
+				<pre><code><span class="hljs-keyword">import</span> { <span class="hljs-type">PersistentRepositoryComponent</span> } from <span class="hljs-symbol">'ngx</span>-persistent-repository';
+
+export <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">YourComponent</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">PersistentRepositoryComponent</span> <span class="hljs-title">implements</span> ... </span>{
+    constructor() {
+        <span class="hljs-keyword">super</span>();
+        ...
+    }
+    ...
+}</code></pre><p>With that you inherit namespaced access all repository methods. You can still access global entries either by using the protected
+				property <code>persistentRepository</code> or the public accessor <code>getPersistentRepository()</code>.  </p>
+				<a href="#exampledemo" id="exampledemo" style="color: inherit; text-decoration: none;">
+					<h2>Example/Demo</h2>
+				</a>
+				<p>A simple Example can be found under src/app directory of the repository. Use <code>ng serve</code> to start the demo.</p>
+				<a href="#api-documentation" id="api-documentation" style="color: inherit; text-decoration: none;">
+					<h2>API Documentation</h2>
+				</a>
+				<p>You can find the <code>typedoc</code> documentation in the <a href="/docs">/docs</a> folder of this repository.</p>
+				<a href="#tips-and-tricks" id="tips-and-tricks" style="color: inherit; text-decoration: none;">
+					<h2>Tips and Tricks</h2>
+				</a>
+				<a href="#cookies-and-persistence" id="cookies-and-persistence" style="color: inherit; text-decoration: none;">
+					<h3>Cookies and Persistence</h3>
+				</a>
+				<p>To actually enable the repository you must call the method <code>enableCookies()</code> or use the <code>enableCookies</code> option in your call to
+					<code>setOptions()</code>. The reason for this lies in the fact that you should normally ask the user&#39;s permission before you use cookies. So
+				the usage pattern is to use status of your cookie-consent package to control cookie activation.</p>
+				<p>If you don&#39;t use a cookie-consent package you still need to call <code>enableCookies(true)</code> or use the respective option.</p>
+				<p>The default setup uses a cookie named &#39;NgxPersistentRepository&#39; to store the repository data. The cookie will expire after 365 days.
+				Use the <code>cookieConfig</code> option for fully control the cookie parameters.   </p>
+				<a href="#external-persistence-database" id="external-persistence-database" style="color: inherit; text-decoration: none;">
+					<h3>External Persistence Database</h3>
+				</a>
+				<p>When using an external database to store the repository you need to provide a hook for reading data from the database (<code>setFetchPersistentDataHook()</code>)
+				and another hook for writing data to the database (<code>setWritePersistentDataHook()</code>).</p>
+				<p>Note that these hooks will only be used when you set a database handle via <code>setDatabaseHandle()</code>. The database handle can be something
+				like a user specific hash or user id. It will be passed to the hooks as reference to the correct dataset.</p>
+				<p>As soon as you clear the database handle, the repository persistence will revert to use the cookie. </p>
+				<p>While changes to the repository are immediately visible and access to persistence data stored in cookies is
+					instantaneous - access to external databases is not. It is therefore essential use the provides <code>Promise</code> return values if
+				you need to be certain the data has been synchronized with the persistence database.</p>
+				<p>You can use the <code>updatePersistentDataImmediate()</code> to make sure the current repository data is synchronized with the persistence database
+				like this:</p>
+				<pre><code><span class="hljs-keyword">this</span>.updatePersistentDataImmediate().then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+    <span class="hljs-comment">// now the repository and the external database are synchronous</span>
+}).catch(<span class="hljs-function">(<span class="hljs-params">error</span>) =&gt;</span> {
+    <span class="hljs-comment">// what ever you want to do in this case...</span>
+});</code></pre><p>A typical read hook looks like this:</p>
+				<pre><code><span class="hljs-keyword">this</span>.preferences.setFetchPersistentDataHook(<span class="hljs-function">(<span class="hljs-params">databaseHandle: <span class="hljs-built_in">string</span></span>) =&gt;</span> {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Promise</span>&lt;PRGenericValues&gt;<span class="hljs-function">(<span class="hljs-params">(<span class="hljs-params">resolve, reject</span>) =&gt; {
+        <span class="hljs-keyword">const</span> params = <span class="hljs-keyword">new</span> HttpParams(<span class="hljs-params">{
+            fromObject: {
+                hash: databaseHandle
+            }
+        }</span>);
+
+        <span class="hljs-keyword">this</span>.http.<span class="hljs-keyword">get</span>(<span class="hljs-params">"/user", {params: params}</span>).toPromise(<span class="hljs-params"></span>).then(<span class="hljs-params">(<span class="hljs-params">result: HttpReply</span>) =&gt; {
+            <span class="hljs-keyword">let</span> prefs: PRGenericValues = {};
+            <span class="hljs-keyword">if</span> (<span class="hljs-params">result.success &amp;&amp; result.user</span>) {
+                <span class="hljs-keyword">try</span> {
+                    prefs = <span class="hljs-built_in">JSON</span>.parse(<span class="hljs-params">atob(<span class="hljs-params">result.user.preferences</span>)</span>) || {};
+                    <span class="hljs-keyword">this</span>.user = result.user;
+                } <span class="hljs-keyword">catch</span> (<span class="hljs-params">e</span>) {
+                    <span class="hljs-comment">// ignore errors</span>
+                }
+                resolve(<span class="hljs-params">prefs</span>);
+            } <span class="hljs-keyword">else</span> {
+                resolve(<span class="hljs-params">prefs</span>);
+            }
+        }</span>).<span class="hljs-keyword">catch</span>(<span class="hljs-params">(<span class="hljs-params">error</span>) =&gt; {
+            <span class="hljs-built_in">console</span>.error(<span class="hljs-params">"error reading preferences", error</span>);
+        }</span>);
+    }</span>);
+});</span></code></pre><p>A matching write hook would then look like this:</p>
+				<pre><code><span class="hljs-keyword">this</span>.repository.setWritePersistentDataHook(<span class="hljs-function">(<span class="hljs-params">databaseHandle: <span class="hljs-built_in">string</span>, data: PRGenericValues</span>) =&gt;</span> {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Promise</span>&lt;<span class="hljs-built_in">void</span>&gt;<span class="hljs-function">(<span class="hljs-params">(<span class="hljs-params">resolve</span>) =&gt; {
+        <span class="hljs-keyword">const</span> userPreferences: PRGenericValues = _.clone(<span class="hljs-params">data</span>);
+
+        <span class="hljs-keyword">const</span> envelope: ClientSideUserModel = {
+            hash: databaseHandle,
+            preferences: btoa(<span class="hljs-params"><span class="hljs-built_in">JSON</span>.stringify(<span class="hljs-params">userPreferences</span>)</span>)
+        };
+
+        <span class="hljs-keyword">this</span>.http.put(<span class="hljs-params">"/user", envelope</span>).toPromise(<span class="hljs-params"></span>).then(<span class="hljs-params">(<span class="hljs-params">result: HttpReply</span>) =&gt; {
+            <span class="hljs-keyword">if</span> (<span class="hljs-params">!result.success</span>) {
+                <span class="hljs-built_in">console</span>.warning(<span class="hljs-params">"unable to write preferences", result</span>);
+            }
+            resolve(<span class="hljs-params"></span>);
+        }</span>).<span class="hljs-keyword">catch</span>(<span class="hljs-params">(<span class="hljs-params">error</span>) =&gt; {
+            <span class="hljs-built_in">console</span>.error(<span class="hljs-params">"AppService.constructor.writePersistentDataHook", "error writing preferences", error</span>);
+        }</span>);
+    }</span>);</span></code></pre>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="globals  ">
+						<a href="globals.html"><em>Globals</em></a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_persistent_repository_component_.html">&quot;persistent-<wbr>repository-<wbr>component&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_persistent_repository_component_interface_.html">&quot;persistent-<wbr>repository-<wbr>component.interface&quot;</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/_persistent_repository_service_.html">&quot;persistent-<wbr>repository.service&quot;</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-interface"><span class="tsd-kind-icon">Interface</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+<script>if (location.protocol == 'file:') document.write('<script src="assets/js/search.js"><' + '/script>');</script>
+</body>
+</html>
