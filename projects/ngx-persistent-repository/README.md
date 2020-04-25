@@ -62,7 +62,7 @@ A simple Example can be found under src/app directory of the repository. Use `ng
 
 ## API Documentation
 
-You can find the `typedoc` documentation in the [/docs](/docs) folder of this repository.
+You can find the `typedoc` documentation in the [/projects/ngx-persistent-repository/docs](/projects/ngx-persistent-repository/docs) folder of this repository.
 
 
 ## Tips and Tricks
@@ -92,7 +92,7 @@ While changes to the repository are immediately visible and access to persistenc
 instantaneous - access to external databases is not. It is therefore essential use the provides `Promise` return values if 
 you need to be certain the data has been synchronized with the persistence database.
 
-You can use the `updatePersistentDataImmediate()` to make sure the current repository data is synchronized with the persistence database
+You can use the `updatePersistentDataImmediate()` to make sure the current repository data gets synchronized with the persistence database
 like this:
 
     this.updatePersistentDataImmediate().then(() => {
