@@ -18,10 +18,10 @@ The packages below must be manually installed in order to use the persistent rep
     "@angular/common": ">=6.0.0",
     "@angular/core": ">=6.0.0",
     "tslib": ">1.9.0",
-    "ngx-cookie-service": "^3.0.0",
+    "ngx-cookie-service": "^2.4.0 || ^3.0.0",
     "lodash": "^4.0.0",
     "lzutf8": "^0.5.5",
-	"stream": "^0.0.2"
+    "stream": "^0.0.2"
 
 
 ## Global Repository Usage
@@ -40,7 +40,7 @@ To use the repository, simply inject `PersistentRepositoryService`  into your cl
 
 ## Component Repository Usage
 
-If you want use a separate namespace in the repository for one of you components, simply let the component inherit from `PersistentRepositoryComponent`:
+If you want use a separate namespace in the repository for one of you components, let the component inherit from `PersistentRepositoryComponent`:
 ```
 import { PersistentRepositoryComponent } from 'ngx-persistent-repository';
 
@@ -52,13 +52,12 @@ export class YourComponent extends PersistentRepositoryComponent implements ... 
     ...
 }
 ``` 
-With that you inherit namespaced access all repository methods. You can still access global entries either by using the protected
+You component will inherit all repository methods properly namespaced. To access the global repository use the protected
 property `persistentRepository` or the public accessor `getPersistentRepository()`.  
 
 ## Example/Demo
 
-A simple Example can be found under src/app directory of the repository. Use `ng serve` to start the demo.
-
+A simple example can be found under src/app directory of the repository. Use `ng serve` to start the demo.
 
 ## API Documentation
 
