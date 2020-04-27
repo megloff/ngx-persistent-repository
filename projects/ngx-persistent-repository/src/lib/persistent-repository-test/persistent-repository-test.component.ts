@@ -47,17 +47,9 @@ export class PersistentRepositoryTestComponent extends PersistentRepositoryCompo
         this.lastType = "Starting";
         this.lastCount = 0;
 
-        this.persistentRepository.enableCookies(true);
-
         this.getPersistentRepository().getUpdateSubject().subscribe((message) => {
             // console.log("message", message);
             switch (message.type) {
-                case PRUpdateTypes.Startup:
-                    this.lastType = "Startup";
-                    this.lastData = message.data;
-                    this.lastPath = null;
-                    this.lastValue = null;
-                    break;
                 case PRUpdateTypes.DataRead:
                     this.lastType = "DataRead";
                     this.lastData = message.data;
@@ -85,6 +77,11 @@ export class PersistentRepositoryTestComponent extends PersistentRepositoryCompo
             }
 
             this.lastCount += 1;
+        });
+
+        // console.log("init 1", this.persistentRepository.isInitialized());
+        this.persistentRepository.enableCookies(true).then(() => {
+            // console.log("init 2", this.persistentRepository.isInitialized());
         });
     }
 }

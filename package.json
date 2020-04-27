@@ -1,9 +1,9 @@
 {
   "name": "persistent-repository-demo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --open --port 4201",
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint"

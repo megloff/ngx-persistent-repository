@@ -28,6 +28,10 @@ describe("PersistentRepositoryComponentTest", () => {
         expect(component.hasService()).toBeTrue();
     });
 
+    it("should initialize", fakeAsync(() => {
+        expect(component.getPersistentRepository().isInitialized()).toBeTrue();
+    }));
+
     it("should access persistentRepository parent class", () => {
         const persistentRepository = component.getPersistentRepository();
         persistentRepository.setValues({
@@ -58,13 +62,12 @@ describe("PersistentRepositoryComponentTest", () => {
     });
 
     it("should trigger update messages", fakeAsync(() => {
-        expect(component.getLastType()).toBe("Starting");
         component.setValue("test", 42);
-        expect(component.getLastCount()).toBe(1);
+        expect(component.getLastType()).toBe("Update");
         expect(component.getLastPath()).toBe("__namespaces__." + component.getModuleName() + ".test");
         expect(component.getLastValue()).toBe(42);
         tick(300);
-        expect(component.getLastCount()).toBe(2);
         expect(component.getLastType()).toBe("DataWritten");
+        expect(component.getValue("test")).toBe(42);
     }));
 });

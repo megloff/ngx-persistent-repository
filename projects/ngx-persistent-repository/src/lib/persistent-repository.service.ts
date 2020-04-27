@@ -10,7 +10,6 @@ export interface PRGenericValues {
 
 export interface PROptions {
     cookiesEnabled?: boolean;
-    databaseHandle?: number | string
     cookieConfig?: {
         name: string;
         expires?: number | Date;
@@ -19,6 +18,7 @@ export interface PROptions {
         secure?: boolean,
         sameSite?: "Lax" | "None" | "Strict"
     },
+    databaseHandle?: number | string
     defaults?: PRGenericValues;
 }
 
@@ -27,7 +27,7 @@ export interface PRData extends PROptions {
 }
 
 export enum PRUpdateTypes {
-    Startup, DataRead, Reset, Update, DataWritten
+    DataRead, Reset, Update, DataWritten
 }
 
 export interface PRUpdateMessage {
@@ -44,40 +44,117 @@ export let PRGlobalInjector: Injector;
     providedIn: "root"
 })
 export class PersistentRepositoryService {
+    private readonly namespaceSection = "__namespaces__";
     private readonly repository: PRData;
     private readonly updates: Subject<PRUpdateMessage> = new Subject<PRUpdateMessage>();
 
+    private fetchPersistentDataPromise: Promise<void>;
+    private writePersistentDataPromise: Promise<void>;
     private fetchPersistentDataHook: (databaseHandle: string | number) => Promise<PRGenericValues>;
     private writePersistentDataHook: (databaseHandle: string | number, data: PRGenericValues) => Promise<void>;
 
-    private readonly namespaceSection = "__namespaces__";
+    private repositoryInitialized: boolean = false;
+
+    private cookieService: CookieService;
 
     private updatePersistentData = _.debounce(() => {
-        this.updatePersistentDataImmediate().catch((error) => {
-            console.error(error);
-        });
+        if (this.repositoryInitialized) {
+            this.updatePersistentDataImmediate().catch((error) => {
+                console.error(error);
+            });
+        } else {
+            // we're still starting up retry again later
+            this.updatePersistentData();
+        }
     }, 100, {trailing: true});
 
     /**
      * The core service of NgxPersistentRepository. Inject this package into your components and services to access the repository.
      */
-    constructor(private appInjector: Injector, private cookieService: CookieService) {
+    constructor(private appInjector: Injector) {
         PRGlobalInjector = appInjector;
 
+        this.cookieService = appInjector.get(CookieService);
+
         this.repository = {
+            cookiesEnabled: false,
             cookieConfig: {
-                name: "NgxPersistentRepository",
+                name: "ngx-persistent-repository",
                 secure: false,
                 sameSite: "Lax"
             },
+            databaseHandle: null,
             defaults: {},
             data: {}
         };
 
-        this.updates.next({
-            type: PRUpdateTypes.Startup,
-            databaseHandle: this.repository.databaseHandle,
-            data: this.repository.data
+        this.updates.subscribe((message) => {
+            if (message.type == PRUpdateTypes.DataRead) {
+                this.repositoryInitialized = true;
+            }
+        });
+    }
+
+    /**
+     * Reload persistent data either directly from the cookie of, if a database handle has been set, from an external database via the `fetchPersistentDataHook`. The promise fulfills
+     * when the data has been read from the source and is ready to use.
+     */
+    public loadPersistentData(): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            this.repository.data = {};
+            this.repositoryInitialized = false;
+
+            if (!this.repository.databaseHandle) {
+                const cookieData = this.cookieService.get(this.repository.cookieConfig.name);
+                if (cookieData) {
+                    try {
+                        this.repository.data = JSON.parse(LZUTF8.decompress(decodeURIComponent(cookieData), {inputEncoding: "Base64"})) || {};
+                    } catch (e) {
+                        // ignore garbled cookies - just start over
+                    }
+                }
+
+                if (this.repository.data.useDbData && this.repository.data.databaseHandle) {
+                    this.repository.databaseHandle = this.repository.data.databaseHandle;
+                    this.repository.data = {};
+                }
+            }
+
+            if (this.repository.databaseHandle) {
+                if (this.fetchPersistentDataHook) {
+                    if (this.fetchPersistentDataPromise) {
+                        this.fetchPersistentDataPromise.then((values) => {
+                            resolve(values);
+                        });
+                    } else {
+                        // obtain data via hook
+                        this.fetchPersistentDataPromise = this.fetchPersistentDataHook(this.repository.databaseHandle).then((values) => {
+                            this.fetchPersistentDataPromise = null;
+                            this.repository.data = _.cloneDeep(values || {});
+                            this.updates.next({
+                                type: PRUpdateTypes.DataRead,
+                                databaseHandle: this.repository.databaseHandle,
+                                data: this.repository.data
+                            });
+                            resolve();
+                        }).catch((error) => {
+                            this.fetchPersistentDataPromise = null;
+                            this.repository.data = {};
+                            this.repository.databaseHandle = null;
+                            reject(error);
+                        });
+                    }
+                } else {
+                    reject("the persistent database hooks must be set when activating a database handle");
+                }
+            } else {
+                this.updates.next({
+                    type: PRUpdateTypes.DataRead,
+                    databaseHandle: this.repository.databaseHandle,
+                    data: this.repository.data
+                });
+                resolve();
+            }
         });
     }
 
@@ -90,44 +167,32 @@ export class PersistentRepositoryService {
             this.updatePersistentData.cancel();
 
             if (this.repository.cookiesEnabled) {
-                let payload: any;
-
-                if (this.repository.databaseHandle) {
-                    payload = {
-                        useDbData: true,
-                        databaseHandle: this.repository.databaseHandle
-                    };
-                } else {
-                    payload = this.repository.data;
-                }
-
-                const data = LZUTF8.compress(JSON.stringify(payload), {outputEncoding: "Base64"});
-
-                if (data.length >= 4000) {
-                    console.error("warning: compressed persistent repository size exceeds the maximal cookie length (4KB). Consider storing the persistent data in a database!");
-                } else {
-                    this.cookieService.set(
-                        this.repository.cookieConfig.name,
-                        data,
-                        this.repository.cookieConfig.expires,
-                        this.repository.cookieConfig.path,
-                        this.repository.cookieConfig.domain,
-                        this.repository.cookieConfig.secure,
-                        this.repository.cookieConfig.sameSite
-                    );
-                }
+                this.writeCookieData();
 
                 if (this.repository.databaseHandle) {
                     if (this.writePersistentDataHook) {
-                        this.writePersistentDataHook(this.repository.databaseHandle, this.repository.data).then(() => {
-                            this.updates.next({
-                                type: PRUpdateTypes.DataWritten,
-                                databaseHandle: this.repository.databaseHandle,
-                                data: this.repository.data
+                        if (this.writePersistentDataPromise) {
+                            this.writePersistentDataPromise.then(() => {
+                                this.updatePersistentDataImmediate().then(() => {
+                                    resolve();
+                                }).catch((error) => {
+                                    reject(error);
+                                });
                             });
-                        }).catch((error) => {
-                            reject(error);
-                        });
+                        } else {
+                            this.writePersistentDataPromise = this.writePersistentDataHook(this.repository.databaseHandle, this.repository.data).then(() => {
+                                this.writePersistentDataPromise = null;
+                                this.updates.next({
+                                    type: PRUpdateTypes.DataWritten,
+                                    databaseHandle: this.repository.databaseHandle,
+                                    data: this.repository.data
+                                });
+                                resolve();
+                            }).catch((error) => {
+                                this.writePersistentDataPromise = null;
+                                reject(error);
+                            });
+                        }
                     } else {
                         reject("the persistent database hooks must be set when activating a database handle");
                     }
@@ -195,11 +260,29 @@ export class PersistentRepositoryService {
 
     // noinspection JSUnusedGlobalSymbols
     /**
-     * Enable the use of cookies. Use this method with the result your cookie-consent tool. Note that if cookies are not enabled, the repository **will not** be persistent!
+     * Enable the use of cookies. Use this method with the result your cookie-consent tool. Note that if cookies are not enabled, the repository **will not**
+     * be persistent! When this method is called with `true`, the current repository data will be synchronized with the persistence database. The promise fulfills
+     * when the repository has been synchronized.
      * @param enable
      */
-    public enableCookies(enable: boolean) {
-        this.repository.cookiesEnabled = enable;
+    public enableCookies(enable: boolean): Promise<void> {
+        let promise: Promise<void>;
+        if (enable) {
+            this.repositoryInitialized = true;
+            this.repository.cookiesEnabled = true;
+            promise = this.updatePersistentDataImmediate();
+        } else {
+            promise = Promise.resolve();
+        }
+
+        return promise;
+    }
+
+    /**
+     * Returns true when the repository has been read from the persistence database.
+     */
+    public isInitialized(): boolean {
+        return this.repositoryInitialized;
     }
 
     /**
@@ -212,9 +295,16 @@ export class PersistentRepositoryService {
         if (this.repository.databaseHandle != handle) {
             this.repository.databaseHandle = handle;
             if (handle) {
-                promise = this.loadPersistentData();
+                promise = new Promise<void>((resolve, reject) => {
+                    this.loadPersistentData().then(() => {
+                        // update the cookie to contain the payload pointing to the persistence database
+                        this.writeCookieData();
+                        resolve();
+                    }).catch((error) => {
+                        reject(error);
+                    });
+                })
             } else {
-
                 promise = this.resetValues();
             }
         } else {
@@ -241,64 +331,18 @@ export class PersistentRepositoryService {
     }
 
     /**
-     * Reload persistent data either directly from the cookie of, if a database handle has been set, from an external database via the `fetchPersistentDataHook`. The promise fulfills
-     * when the data has been read from the source and is ready to use.
-     */
-    public loadPersistentData(): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            this.repository.data = {};
-
-            if (!this.repository.databaseHandle) {
-                const cookieData = this.cookieService.get(this.repository.cookieConfig.name);
-                if (cookieData) {
-                    try {
-                        this.repository.data = JSON.parse(LZUTF8.decompress(decodeURIComponent(cookieData), {inputEncoding: "Base64"})) || {};
-                    } catch (e) {
-                        // ignore garbled cookies - just start over
-                    }
-                }
-
-                if (this.repository.data.useDbData && this.repository.data.databaseHandle) {
-                    this.repository.databaseHandle = this.repository.data.databaseHandle;
-                    this.repository.data = {};
-                }
-            }
-
-            if (this.repository.databaseHandle) {
-                if (this.fetchPersistentDataHook) {
-                    // obtain data via hook
-                    this.fetchPersistentDataHook(this.repository.databaseHandle).then((values) => {
-                        this.repository.data = _.cloneDeep(values);
-                        this.updates.next({
-                            type: PRUpdateTypes.DataRead,
-                            databaseHandle: this.repository.databaseHandle,
-                            data: this.repository.data
-                        });
-                        resolve();
-                    }).catch((error) => {
-                        this.repository.data = {};
-                        this.repository.databaseHandle = null;
-                        reject(error);
-                    });
-                } else {
-                    reject("the persistent database hooks must be set when activating a database handle");
-                }
-            } else {
-                this.updates.next({
-                    type: PRUpdateTypes.DataRead,
-                    databaseHandle: this.repository.databaseHandle,
-                    data: this.repository.data
-                });
-                resolve();
-            }
-        });
-    }
-
-    /**
      * Reset the repository to it's default values. The promise fulfills after repository has synchronized with the persistence database.
      */
     public resetValues(): Promise<void> {
         this.repository.data = _.cloneDeep(this.repository.defaults || {});
+        this.repositoryInitialized = true;
+
+        this.updates.next({
+            type: PRUpdateTypes.Reset,
+            databaseHandle: this.repository.databaseHandle,
+            data: this.repository.data
+        });
+
         return this.updatePersistentDataImmediate();
     }
 
@@ -396,6 +440,39 @@ export class PersistentRepositoryService {
     public containsValue(path: string, value: string | number | boolean, namespace?: string): boolean {
         const values = this.getValue(path, namespace);
         return _.isArray(values) ? values.includes(value) : false;
+    }
+
+    /**
+     * Write the cookie payload to the cookie. The payload is either the repository itself, or the databaseHandle to be used to read the data from the
+     * persistence database.
+     */
+    private writeCookieData() {
+        let payload: any;
+
+        if (this.repository.databaseHandle) {
+            payload = {
+                useDbData: true,
+                databaseHandle: this.repository.databaseHandle
+            };
+        } else {
+            payload = this.repository.data;
+        }
+
+        const data = LZUTF8.compress(JSON.stringify(payload), {outputEncoding: "Base64"});
+
+        if (data.length >= 4000) {
+            console.error("warning: compressed persistent repository size exceeds the maximal cookie length (4KB). Consider storing the persistent data in a database!");
+        } else {
+            this.cookieService.set(
+                this.repository.cookieConfig.name,
+                data,
+                this.repository.cookieConfig.expires,
+                this.repository.cookieConfig.path,
+                this.repository.cookieConfig.domain,
+                this.repository.cookieConfig.secure,
+                this.repository.cookieConfig.sameSite
+            );
+        }
     }
 
     /**

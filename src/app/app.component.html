@@ -40,7 +40,7 @@
                 <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>
             </svg>
 
-            <a href="https://github.com/megloff/ngx-persistent-repository.git">Documentation</a>
+            <a href="https://github.com/megloff/ngx-persistent-repository/tree/master/projects/ngx-persistent-repository">Documentation</a>
 
             <svg class="material-icons" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
@@ -52,7 +52,7 @@
                 <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
             </svg>
 
-            <a href="https://github.com/megloff/ngx-persistent-repository.git">NPM module</a>
+            <a href="https://www.npmjs.com/package/ngx-persistent-repository">NPM module</a>
 
             <svg class="material-icons" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
@@ -75,12 +75,16 @@
 
     <!-- Next Steps -->
     <h2>Persistent Repository Demo</h2>
-    <p>You have loaded this page <b>{{ loadCount === 0 ? 'never so far' : (loadCount === 1 ? 'for the first time' : loadCount + ' times') }}.</b></p>
     <br>
-    <p>Global value is <b>{{ dynamicallyLoadedValue }}.</b></p>
+    <p>Persistence Database:
+        <label><input type="radio" name="dbChoice" (click)="setDbChoice('cookie')" [checked]="!databaseHandle"> Use Cookie </label>
+        <label><input type="radio" name="dbChoice" (click)="setDbChoice('external')" [checked]="databaseHandle"> Use database server</label>
+    </p>
+    <br>
+    <p>You have loaded this page <b>{{ getValue("loadCount")  === 0 ? 'never so far' : (getValue("loadCount")  === 1 ? 'for the first time' : getValue("loadCount")  + ' times') }}.</b></p>
     <br>
     <p>Reload the browser window to see the count go up.</p>
     <br>
-    <p>Use 'Reset Storage' below to reset the persistent repository and start the counter again.</p>
+    <p>Use 'Reset Storage' below to reset the persistent repository and the mock database server to start the counter again.</p>
     <br>
     <button (click)="reset()">Reset Storage</button>

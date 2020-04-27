@@ -74,7 +74,7 @@ the usage pattern is to use status of your cookie-consent package to control coo
 
 If you don't use a cookie-consent package you still need to call `enableCookies(true)` or use the respective option.
 
-The default setup uses a cookie named 'NgxPersistentRepository' to store the repository data. The cookie will expire after 365 days.
+The default setup uses a cookie named 'ngx-persistent-repository' to store the repository data. The cookie will expire after 365 days.
 Use the `cookieConfig` option for fully control the cookie parameters.   
 
 ### External Persistence Database
@@ -146,6 +146,6 @@ A matching write hook would then look like this:
                 }
                 resolve();
             }).catch((error) => {
-                console.error("AppService.constructor.writePersistentDataHook", "error writing preferences", error);
+                console.error("error writing preferences", error);
             });
         });
