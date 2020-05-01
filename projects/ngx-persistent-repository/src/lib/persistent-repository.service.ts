@@ -173,11 +173,9 @@ export class PersistentRepositoryService {
                     if (this.writePersistentDataHook) {
                         if (this.writePersistentDataPromise) {
                             this.writePersistentDataPromise.then(() => {
-                                this.updatePersistentDataImmediate().then(() => {
-                                    resolve();
-                                }).catch((error) => {
-                                    reject(error);
-                                });
+                                resolve();
+                            }).catch((error) => {
+                                reject(error);
                             });
                         } else {
                             this.writePersistentDataPromise = this.writePersistentDataHook(this.repository.databaseHandle, this.repository.data).then(() => {
@@ -303,7 +301,7 @@ export class PersistentRepositoryService {
                     }).catch((error) => {
                         reject(error);
                     });
-                })
+                });
             } else {
                 promise = this.resetValues();
             }
